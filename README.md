@@ -38,6 +38,30 @@ This project demonstrates a full-scale migration of an academic management syste
 - ✅ **Reverse Replication**: PostgreSQL → Oracle for validation and rollback testing.
 - ✅ **Performance Tuning**: Indexing, vacuum strategies, query optimization.
 
+## 📂 Repository Structure
+        oracle-to-postgresql-migration/
+        │
+        ├── ddl/
+        │   ├── oracle_schema.sql
+        │   └── postgres_schema.sql
+        │
+        ├── plsql/
+        │   ├── oracle_packages/
+        │   └── postgres_functions/
+        │
+        ├── migration/
+        │   ├── dms_tasks.json
+        │   └── replication_config.md
+        │
+        ├── docs/
+        │   ├── ER_diagram.png
+        │   └── migration_notes.md
+        │
+        ├── sample_data/
+        │   └── students.csv
+        │
+        └── README.md
+
 ## 📌 Status
 - 🚧 Schema conversion and migration in progress  
 
