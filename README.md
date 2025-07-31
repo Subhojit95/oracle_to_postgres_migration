@@ -1,51 +1,48 @@
-# 🎓 Academic Database Migration Project
+# 🔄 Oracle to PostgreSQL Database Migration – Academic Management System
 
-## 🧩 Project Overview
-This project showcases the modernization of a comprehensive academic management system through schema redesign and database migration. Built for institutions aiming to streamline student, faculty, course, and infrastructure data, this system integrates multiple modules into a unified relational database.
+## 🚀 Project Overview
+This project demonstrates a full-scale migration of an academic management system from Oracle to PostgreSQL, leveraging AWS cloud services and advanced database tooling. It includes schema transformation, PL/SQL object conversion, and real-time replication strategies using AWS Database Migration Service (DMS).
 
-## 🎯 Project Goals
-- Migrate legacy data and structure from Oracle to PostgreSQL (or vice versa) while preserving referential integrity.
-- Refactor schemas for improved normalization, scalability, and performance.
-- Showcase stored procedures, constraints, and automation scripts for real-world academic workflows.
+## 🎯 Objectives
+- Migrate a complex Oracle-based academic database to PostgreSQL on AWS RDS.
+- Convert PL/SQL procedures, functions, and packages to PostgreSQL-compatible equivalents.
+- Use AWS DMS for initial data migration and reverse replication for validation and rollback testing.
+- Showcase schema redesign, performance optimization, and cloud deployment.
 
 ## 🛠️ Tech Stack
-- **Database Engines**: Oracle SQL & PostgreSQL
-- **Languages**: SQL, PL/SQL, pgSQL
-- **Version Control**: Git / GitHub
-- **Tools**: SQL Developer, pgAdmin, ERD tools (dbdiagram.io, draw.io)
+| Component            | Description                                      |
+|---------------------|--------------------------------------------------|
+| **Source DB**        | Oracle 19c                                       |
+| **Target DB**        | PostgreSQL 15 on AWS RDS                         |
+| **Migration Tool**   | AWS Database Migration Service (DMS)            |
+| **Replication**      | Reverse replication for data integrity checks   |
+| **Code Conversion**  | PL/SQL to pgSQL (procedures, triggers, packages)|
+| **Version Control**  | Git / GitHub                                     |
+| **Monitoring**       | AWS CloudWatch, pg_stat_statements              |
 
-## 🧱 Key Modules
-- **Admissions**: Student registration, notes, department linking.
-- **Academics**: Courses, prerequisites, offerings, exams, grades, schedules.
-- **Faculty & Departments**: Staff hiring, profiles, academic roles.
-- **Hostel**: Room allocations, capacity, preferences.
-- **Library**: Book tracking, loans, condition notes.
-- **Finance**: Student fees, scholarships, payments.
-- **Communication**: System notifications between faculty and students.
-- **Behavior & Attendance**: Disciplinary actions, attendance tracking.
+## 🧱 Modules Migrated
+- **Admissions**: Student records, department mapping.
+- **Academics**: Courses, prerequisites, grades, exams, schedules.
+- **Faculty & Departments**: Staff profiles, hiring data.
+- **Hostel & Library**: Room allocations, book loans.
+- **Finance**: Fees, payments, scholarships.
+- **Communication**: Notifications, disciplinary actions.
 
-## 📦 Structure & Features
-- Detailed `CREATE TABLE` statements with relational integrity.
-- Use of advanced datatypes (`CLOB`, `DATE`, `VARCHAR2`, etc.).
-- Embedded business logic (e.g. attendance, results, notifications).
-- Migration simulations between platforms.
-- Stored procedures for automated GPA calculation, fee alerts, etc.
+## 🔧 Migration Highlights
+- ✅ **Schema Translation**: Oracle `NUMBER`, `VARCHAR2`, `CLOB` mapped to PostgreSQL equivalents.
+- ✅ **PL/SQL Conversion**: Refactored packages and procedures using pgSQL and `DO` blocks.
+- ✅ **AWS DMS Setup**: 
+  - Full load + CDC (Change Data Capture)
+  - Source: Oracle on-prem
+  - Target: PostgreSQL on AWS RDS
+- ✅ **Reverse Replication**: PostgreSQL → Oracle for validation and rollback testing.
+- ✅ **Performance Tuning**: Indexing, vacuum strategies, query optimization.
 
-## 📐 ER Diagram
-> Diagram image / link (dbdiagram.io or draw.io recommended)
+## 📌 Status
+- 🚧 Schema conversion and migration in progress  
 
-## 📚 Sample Queries & Use Cases
-- Find students eligible for scholarships based on GPA.
-- Generate room availability reports for hostels.
-- Retrieve academic history and performance reports per semester.
-
-## 🗃️ Status
-✅ Schema finalized  
-🚧 Migration scripts in progress  
-📌 Procedures and triggers to be added
-
----
 
 ## 🤝 Contribution & Contact
-Feel free to fork, suggest optimizations, or raise issues.  
-📬 Contact: subhojit@email.com (replace with your contact or GitHub handle)
+Suggestions, forks, and feedback are welcome!  
+📬 Contact: [iamsubh43@gmail.com]  
+🔗 GitHub: [github.com/Subhojit95]
