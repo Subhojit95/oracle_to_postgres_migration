@@ -1,31 +1,23 @@
 -- procedures
 
-create or replace PROCEDURE allocate_hostel (
-  p_alloc_id NUMBER,
-  p_student_id NUMBER,
-  p_hostel_id NUMBER,
-  p_room_number VARCHAR2,
-  p_allocation_date DATE,
-  p_notes CLOB
+create or replace PROCEDURE allocate_hostel_room (
+    p_alloc_id        NUMBER,
+    p_student_id      NUMBER,
+    p_hostel_id       NUMBER,
+    p_room_number     VARCHAR2,
+    p_allocation_date DATE,
+    p_notes           CLOB
 ) AS
 BEGIN
-  INSERT INTO hostel_allocations
-  VALUES (p_alloc_id, p_student_id, p_hostel_id, p_room_number, p_allocation_date, p_notes);
-END;
-
-------------------------------------------------------------------------------------------------------
-
-create or replace PROCEDURE allocate_room_to_student (
-  p_alloc_id NUMBER,
-  p_student_id NUMBER,
-  p_hostel_id NUMBER,
-  p_room_number VARCHAR2,
-  p_allocation_date DATE,
-  p_notes CLOB
-) AS
-BEGIN
-  INSERT INTO hostel_allocations
-  VALUES (p_alloc_id, p_student_id, p_hostel_id, p_room_number, p_allocation_date, p_notes);
+    INSERT INTO hostel_allocations
+    VALUES (
+        p_alloc_id,
+        p_student_id,
+        p_hostel_id,
+        p_room_number,
+        p_allocation_date,
+        p_notes
+    );
 END;
 
 -------------------------------------------------------------------------------------------------------
