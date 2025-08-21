@@ -22,41 +22,77 @@ END;
 
 -------------------------------------------------------------------------------------------------------
 
-create or replace PROCEDURE bulk_insert_students(p_students IN student_bulk_insert_tab) IS
+CREATE OR REPLACE PROCEDURE bulk_insert_students (
+    p_students IN student_bulk_insert_tab
+) IS
+    -- Local exception tracking
+    bulk_errors EXCEPTION;
+    PRAGMA EXCEPTION_INIT(bulk_errors, -24381); -- For SAVE EXCEPTIONS
+    
+    v_errors    NUMBER;
+    v_msg       VARCHAR2(4000);
 BEGIN
-  FOR i IN 1 .. p_students.COUNT LOOP
-    INSERT INTO students (
-      student_id,
-      name,
-      dob,
-      email,
-      dept_id,
-      enrollment_date
-    ) VALUES (
-      seq_students.NEXTVAL, -- auto-generated ID
-      p_students(i).name,
-      p_students(i).dob,
-      p_students(i).email,
-      p_students(i).dept_id,
-      p_students(i).enrollment_date
-    );
-  END LOOP;
+    -- Use FORALL for efficient bulk DML
+    FORALL i IN 1 .. p_students.COUNT SAVE EXCEPTIONS
+        INSERT INTO students (
+            student_id,
+            name,
+            dob,
+            email,
+            dept_id,
+            enrollment_date
+        )
+        VALUES (
+            seq_students.NEXTVAL,
+            p_students(i).name,
+            p_students(i).dob,
+            p_students(i).email,
+            p_students(i).dept_id,
+            NVL(p_students(i).enrollment_date, SYSDATE) -- default to today if null
+        );
+
+    DBMS_OUTPUT.PUT_LINE(SQL%ROWCOUNT || ' students inserted successfully.');
+
+EXCEPTION
+    WHEN bulk_errors THEN
+        v_errors := SQL%BULK_EXCEPTIONS.COUNT;
+        DBMS_OUTPUT.PUT_LINE('Bulk insert completed with ' || v_errors || ' errors.');
+        
+        -- Log each error
+        FOR i IN 1 .. v_errors LOOP
+            v_msg := 'Error at index ' || SQL%BULK_EXCEPTIONS(i).ERROR_INDEX ||
+                     ' - ORA-' || SQL%BULK_EXCEPTIONS(i).ERROR_CODE;
+            DBMS_OUTPUT.PUT_LINE(v_msg);
+        END LOOP;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);
+        RAISE; -- re-raise so caller knows something failed
 END;
+/
+
 
 --------------------------------------------------------------------------------------------------------
 
-create or replace PROCEDURE enroll_student_in_course (
-  p_enrollment_id NUMBER,
-  p_student_id NUMBER,
-  p_course_id NUMBER,
-  p_semester_code VARCHAR2,
-  p_grade VARCHAR2,
-  p_notes CLOB
+CREATE OR REPLACE PROCEDURE enroll_student_in_course (
+  p_student_id     NUMBER,
+  p_course_id      NUMBER,
+  p_semester_code  VARCHAR2,
+  p_grade          VARCHAR2,
+  p_notes          CLOB
 ) AS
 BEGIN
   INSERT INTO enrollments
-  VALUES (p_enrollment_id, p_student_id, p_course_id, p_semester_code, p_grade, p_notes);
+  VALUES (
+    NULL,              -- trigger fills in seq_enrollments.NEXTVAL
+    p_student_id,
+    p_course_id,
+    p_semester_code,
+    p_grade,
+    p_notes
+  );
 END;
+/
 
 ---------------------------------------------------------------------------------------------------------
 
@@ -193,32 +229,44 @@ END;
 
 -------------------------------------------------------------------------------------------------------------
 
-create or replace PROCEDURE record_book_return (
-  p_loan_id NUMBER,
+CREATE OR REPLACE PROCEDURE record_book_return (
+  p_loan_id     NUMBER,
   p_return_date DATE
 ) AS
+  v_count NUMBER;
+  v_already_returned DATE;
 BEGIN
+  -- Check if loan exists
+  SELECT COUNT(*)
+  INTO v_count
+  FROM book_loans
+  WHERE loan_id = p_loan_id;
+
+  IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001, 'Loan ID ' || p_loan_id || ' does not exist.');
+  END IF;
+
+  -- Check if already returned
+  SELECT return_date
+  INTO v_already_returned
+  FROM book_loans
+  WHERE loan_id = p_loan_id;
+
+  IF v_already_returned IS NOT NULL THEN
+    RAISE_APPLICATION_ERROR(-20002, 'Loan ID ' || p_loan_id || ' has already been returned on ' || TO_CHAR(v_already_returned, 'DD-MON-YYYY'));
+  END IF;
+
+  -- Perform update
   UPDATE book_loans
   SET return_date = p_return_date
   WHERE loan_id = p_loan_id;
+
+  COMMIT;
 END;
+/
+
 
 --------------------------------------------------------------------------------------------------------------
-
-create or replace PROCEDURE record_disciplinary_action (
-  p_action_id NUMBER,
-  p_student_id NUMBER,
-  p_faculty_id NUMBER,
-  p_action_date DATE,
-  p_description VARCHAR2,
-  p_details CLOB
-) AS
-BEGIN
-  INSERT INTO disciplinary_actions
-  VALUES (p_action_id, p_student_id, p_faculty_id, p_action_date, p_description, p_details);
-END;
-
----------------------------------------------------------------------------------------------------------------
 
 create or replace PROCEDURE schedule_exam_for_course (
   p_exam_id NUMBER,
@@ -295,25 +343,51 @@ END;
 --------------------------------------------------------------------------------------------------------------
 
 create or replace PROCEDURE upsert_student_info (
-  p_student_id NUMBER,
-  p_name VARCHAR2,
-  p_dob DATE,
-  p_email VARCHAR2
+  p_student_id      IN NUMBER,
+  p_name            VARCHAR2,
+  p_dob             DATE,
+  p_email           VARCHAR2,
+  p_dept_id         NUMBER DEFAULT NULL,
+  p_enrollment_date DATE DEFAULT SYSDATE,
+  p_notes           CLOB DEFAULT NULL
 ) AS
+  v_student_id NUMBER;
+  v_count      NUMBER;
 BEGIN
+  -- Auto-generate student_id if NULL
+  v_student_id := p_student_id;
+  IF v_student_id IS NULL THEN
+    SELECT seq_students.NEXTVAL INTO v_student_id FROM dual;
+  END IF;
+
+  -- Check for duplicate email (other than same student_id)
+  SELECT COUNT(*) INTO v_count
+  FROM students
+  WHERE email = p_email
+    AND student_id <> NVL(p_student_id, -1);
+
+  IF v_count > 0 THEN
+    RAISE_APPLICATION_ERROR(-20010, 'Email ' || p_email || ' already exists.');
+  END IF;
+
   MERGE INTO students s
-  USING (SELECT p_student_id AS student_id,
-               p_name AS name,
-               p_dob AS dob,
-               p_email AS email
+  USING (SELECT v_student_id       AS student_id,
+                p_name             AS name,
+                p_dob              AS dob,
+                p_email            AS email,
+                p_dept_id          AS dept_id,
+                p_enrollment_date  AS enrollment_date,
+                p_notes            AS notes
          FROM dual) src
   ON (s.student_id = src.student_id)
   WHEN MATCHED THEN
-    UPDATE SET s.name = src.name,
-               s.dob = src.dob,
-               s.email = src.email
+    UPDATE SET s.name            = src.name,
+               s.dob             = src.dob,
+               s.email           = src.email,
+               s.dept_id         = src.dept_id,
+               s.enrollment_date = src.enrollment_date,
+               s.notes           = src.notes
   WHEN NOT MATCHED THEN
-    INSERT (student_id, name, dob, email)
-    VALUES (src.student_id, src.name, src.dob, src.email);
+    INSERT (student_id, name, dob, email, dept_id, enrollment_date, notes)
+    VALUES (src.student_id, src.name, src.dob, src.email, src.dept_id, src.enrollment_date, src.notes);
 END;
-
