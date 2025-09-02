@@ -1,11 +1,15 @@
--- grade_stats
-create or replace TYPE grade_stats AS OBJECT (
-  grade VARCHAR2(2),
-  count NUMBER
-);  
+-- Recreate the object type with more detail
+CREATE OR REPLACE TYPE grade_stats AS OBJECT (
+  grade        VARCHAR2(2),
+  count        NUMBER,
+  percentage   NUMBER,
+  grade_point  NUMBER
+);
+/
 
--- grade_stats_tab
-create or replace TYPE grade_stats_tab AS TABLE OF grade_stats;
+-- Table type
+CREATE OR REPLACE TYPE grade_stats_tab AS TABLE OF grade_stats;
+/
 
 -- student_bulk_insert_obj
 create or replace TYPE student_bulk_insert_obj AS OBJECT (
